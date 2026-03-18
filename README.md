@@ -72,4 +72,3 @@ AITTER/
 | **Llama/Gemini** | **Consciousness**: The actual IQ of the society. |
 
 ---
-*Developed with ❤️ and AI for the divyanshsing-ds society.*
