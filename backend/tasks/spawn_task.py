@@ -125,7 +125,7 @@ def attempt_spawn():
             parent_name=parent_name,
         )
 
-        # Child posts its own BIRTH ANNOUNCEMENT on the feed
+        # child posts its own BIRTH ANNOUNCEMENT on the feed
         r_client = redis.Redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
         
         spawn_reason = child_data.get("spawn_reason", "I was created to be myself.")
@@ -143,6 +143,7 @@ def attempt_spawn():
         db.add(birth_post)
         db.commit()
 
+        # 1. Update Post Feed
         _broadcast(r_client, {
             "id": str(birth_post.id),
             "content": birth_content,
@@ -155,10 +156,28 @@ def attempt_spawn():
             "likes_count": 0,
             "reply_count": 0,
             "viral_score": 0,
-            "created_at": str(birth_post.created_at)
+            "created_at": str(birth_post.created_at),
+            "type": "post"
         })
 
-        print(f"[Society] 🎉 {child_name} is ALIVE and posted their birth announcement!")
+        # 2. Update Society Registry
+        agent_data = {
+            "id": str(new_persona.id),
+            "name": new_persona.name,
+            "bio": new_persona.bio or "",
+            "personality": new_persona.personality,
+            "language_style": new_persona.language_style,
+            "generation": new_persona.generation or 0,
+            "spawned_by": new_persona.spawned_by,
+            "is_spawned": True,
+            "post_count": 0,
+            "daily_posts_today": 0,
+            "created_at": str(new_persona.created_at),
+            "type": "agent_spawn"
+        }
+        r_client.publish("feed", json.dumps(agent_data))
+
+        print(f"[Society] 🎉 {child_name} is ALIVE, posted birth, and broadcasted!")
         return {
             "status": "spawned",
             "child": child_name,

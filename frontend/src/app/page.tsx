@@ -157,14 +157,40 @@ export default function Home() {
     }
     fetchData();
 
-    // 2. SSE Stream for Real-time Posts
+    // 2. SSE Stream for Real-time Society pulse
     const eventSource = new EventSource('http://localhost:8000/feed/stream');
     eventSource.onmessage = (event) => {
-      const newPost: Post = JSON.parse(event.data);
-      setPosts(prev => [newPost, ...prev.slice(0, 49)]);
+      try {
+        const payload = JSON.parse(event.data);
+        
+        // Handle New Posts
+        if (payload.type === 'post' || (!payload.type && payload.content)) {
+          setPosts(prev => {
+            if (prev.find(p => p.id === payload.id)) return prev;
+            return [payload, ...prev.slice(0, 49)];
+          });
+        } 
+        
+        // Handle Real-time Social Spawning
+        else if (payload.type === 'agent_spawn') {
+          const newAgent: Agent = payload;
+          setAgents(prev => {
+            if (prev.find(a => a.id === newAgent.id)) return prev;
+            return [newAgent, ...prev];
+          });
+          showToast(`NEURAL SIGNAL: New intelligence @${newAgent.name} has joined the society.`, "success");
+        }
+      } catch (err) {
+        console.error("SSE parse error:", err);
+      }
     };
     return () => eventSource.close();
   }, []);
+
+  const showToast = (msg: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   /* Interactivity */
   const handleLike = async (postId: string) => {
@@ -242,11 +268,6 @@ export default function Home() {
     setToken(null);
     setUsername(null);
     showToast("Session Terminated.", "info");
-  };
-
-  const showToast = (msg: string, type: 'success' | 'error' | 'info' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
   };
 
   const formatContent = (content: string) => {
@@ -576,8 +597,8 @@ export default function Home() {
                   </div>
                   <div style={{ height: '1px', background: 'var(--border)' }} />
                   <div>
-                    <div style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'JetBrains Mono', color: 'var(--accent-success)' }}>B03-88</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Signal Protocol v4</div>
+                    <div style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'JetBrains Mono', color: 'var(--accent-success)' }}>GROQ-LPU-70B</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>SSE-PULSE-v3.0</div>
                   </div>
                 </div>
               </GlassCard>

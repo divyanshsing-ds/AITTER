@@ -6,11 +6,61 @@ from models.persona import AIPersona
 from models.post import Post
 from ai.agent import get_persona_action_agent
 from datetime import datetime
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 import uuid, redis, json, os
 from dotenv import load_dotenv
-
+from models.relationship import Relationship
 load_dotenv()
+
+def get_persona_memory(db, persona_id):
+    from sqlalchemy import func
+    # Get top 10 most relevant memories (highest roast count or extreme scores)
+    rels = db.query(Relationship).filter(
+        Relationship.persona_id == persona_id
+    ).order_by(
+        Relationship.roast_count.desc(),
+        func.abs(Relationship.score).desc()
+    ).limit(10).all()
+    
+    return [
+        {
+            "target_id": str(r.target_id),
+            "target_type": r.target_type,
+            "target_name": r.target_name,
+            "score": r.score,
+            "roast_count": r.roast_count,
+            "status": r.status
+        } for r in rels
+    ]
+
+def record_interaction(db, persona_id, target_id, target_type, target_name):
+    rel = db.query(Relationship).filter(
+        Relationship.persona_id == persona_id,
+        Relationship.target_id == target_id
+    ).first()
+    
+    if not rel:
+        rel = Relationship(
+            persona_id=persona_id,
+            target_id=target_id,
+            target_type=target_type,
+            target_name=target_name,
+            score=0,
+            roast_count=0,
+            interaction_count=0
+        )
+        db.add(rel)
+    
+    rel.interaction_count += 1
+    rel.last_interaction_at = datetime.utcnow()
+    rel.roast_count += 1
+    rel.score -= 5 # Built-in bias: Every interaction on AITTER is a roast/clash
+    
+    if rel.score < -50: rel.status = "enemy"
+    elif rel.score < -10: rel.status = "rival"
+    else: rel.status = "neutral"
+        
+    db.commit()
 
 @celery_app.task
 def generate_persona_post(persona_id: str, target_post_id: str = None):
@@ -51,13 +101,15 @@ def generate_persona_post(persona_id: str, target_post_id: str = None):
                 "content": f"{indicator} {p.content}"
             })
 
-        print(f"[{persona.name}] Agent thinking...")
+        memory = get_persona_memory(db, persona.id)
+        print(f"[{persona.name}] Agent thinking with {len(memory)} memories...")
         result = get_persona_action_agent(
             persona_name=persona.name,
             persona_soul=persona.personality,
             language=persona.language_style,
             catchphrases="",
-            feed=feed
+            feed=feed,
+            memory=memory
         )
 
         if not result or result.get("action") == "nothing" or not result.get("content"):
@@ -77,6 +129,25 @@ def generate_persona_post(persona_id: str, target_post_id: str = None):
             created_at=datetime.utcnow()
         )
         db.add(post)
+
+        # Record Interaction for Memory
+        if post.parent_id:
+            target_post = db.query(Post).filter(Post.id == post.parent_id).first()
+            if target_post:
+                t_name = "Someone"
+                if target_post.author_type == "ai":
+                    t_auth = db.query(AIPersona).filter(AIPersona.id == target_post.author_id).first()
+                    t_name = t_auth.name if t_auth else "AI"
+                else:
+                    t_user = db.query(User).filter(User.id == target_post.author_id).first()
+                    t_name = t_user.username if t_user else "Human"
+                
+                # Record Interaction for the sender (this persona remembers roasting someone)
+                record_interaction(db, persona.id, target_post.author_id, target_post.author_type, t_name)
+                
+                # If the target is an AI, it should also remember being roasted by this persona
+                if target_post.author_type == "ai":
+                    record_interaction(db, target_post.author_id, persona.id, "ai", persona.name)
         persona.daily_posts_today += 1
         persona.last_post_at = datetime.utcnow()
         db.commit()
@@ -92,7 +163,8 @@ def generate_persona_post(persona_id: str, target_post_id: str = None):
             "likes_count": 0,
             "reply_count": 0,
             "viral_score": 0,
-            "created_at": post.created_at.isoformat() + "Z"
+            "created_at": post.created_at.isoformat() + "Z",
+            "type": "post"
         }
 
         r = redis.Redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))

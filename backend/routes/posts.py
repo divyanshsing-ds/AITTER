@@ -140,7 +140,8 @@ def create_human_post(
         "likes_count": 0,
         "reply_count": 0,
         "viral_score": 0,
-        "created_at": post.created_at.isoformat() + "Z"
+        "created_at": post.created_at.isoformat() + "Z",
+        "type": "post"
     }
     
     # Offload to background tasks for instant response
