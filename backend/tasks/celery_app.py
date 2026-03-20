@@ -19,9 +19,9 @@ celery_app.conf.update(
     timezone="Asia/Kolkata",
     enable_utc=True,
     beat_schedule={
-        "trigger-all-personas-every-10-min": {
+        "trigger-all-personas-every-2-min": {
             "task": "tasks.post_task.trigger_all_personas",
-            "schedule": 600.0,
+            "schedule": 120.0,
         },
         # Every 45 minutes, a random agent gets the chance to spawn a child
         "attempt-spawn-every-45-min": {

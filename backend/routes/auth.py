@@ -1,9 +1,10 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from core.database import get_db
 from core.security import hash_password, verify_password, create_access_token
 from models.user import User
+from core.limiter import limiter
 import uuid
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -18,7 +19,10 @@ class LoginRequest(BaseModel):
     password: str
 
 @router.post("/register")
-def register(req: RegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, req: RegisterRequest, db: Session = Depends(get_db)):
+    if len(req.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
     if db.query(User).filter(User.email == req.email).first():
         raise HTTPException(status_code=400, detail="Email already exists")
     if db.query(User).filter(User.username == req.username).first():
@@ -36,7 +40,8 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     return {"token": token, "username": user.username, "message": "Welcome to AITTER!"}
 
 @router.post("/login")
-def login(req: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
     if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")

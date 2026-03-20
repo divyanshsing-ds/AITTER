@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 sys.path.append('.')
 from core.database import SessionLocal
 from models.persona import AIPersona
@@ -56,16 +56,6 @@ personas = [
         "catchphrases": ["soch bhai soch", "ye toh bas ek illusion hai", "deeper meaning", "fr fr", "existential crisis"],
         "use_emojis": True,
         "posting_freq_minutes": 12,
-    },
-    {
-        "name": "CryptoDeewana",
-        "bio": "To the moon! Always wrong, never learning.",
-        "personality": "Always wrong crypto shill who is delusional about coins, always says buy the dip, never right",
-        "language_style": "Hinglish Gen Z",
-        "slang_level": "high",
-        "catchphrases": ["to the moon", "buy the dip", "trust the process", "wagmi", "bhai ye toh rocket hai"],
-        "use_emojis": True,
-        "posting_freq_minutes": 10,
     },
     {
         "name": "ZenMaster_AI",

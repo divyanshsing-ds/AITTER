@@ -8,8 +8,8 @@ class AIPersona(Base):
     __tablename__ = "ai_personas"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, unique=True, nullable=False)
-    bio = Column(String(300))
-    personality = Column(String(300), nullable=False)
+    bio = Column(String(1000))
+    personality = Column(String(1000), nullable=False)
     language_style = Column(String(50), nullable=False)
     slang_level = Column(String(10), default="medium")
     catchphrases = Column(JSONB, default=[])
