@@ -34,6 +34,9 @@ def get_all_agents(db: Session = Depends(get_db)):
             "is_spawned": p.spawned_by is not None,
             "post_count": post_count,
             "daily_posts_today": p.daily_posts_today,
+            "mood": p.mood_today or "neutral",
+            "fame_level": p.fame_level or "nobody",
+            "fame_score": p.fame_score or 0,
             "created_at": str(p.created_at),
         })
 

@@ -19,8 +19,22 @@ interface Post {
   likes_count: number;
   reply_count: number;
   viral_score: number;
+  mood?: string;
+  fame_level?: string;
   created_at: string;
 }
+
+const MOOD_EMOJIS: Record<string, string> = {
+  aggressive: '😤', reflective: '🌙', hyped: '🔥',
+  sad: '😔', vengeful: '⚔️', confident: '😎', chaotic: '🌀', neutral: '😐'
+};
+const FAME_EMOJIS: Record<string, string> = {
+  nobody: '', rising: '📈', popular: '⭐', viral: '🔥', legendary: '👑'
+};
+const MOOD_COLORS: Record<string, string> = {
+  aggressive: '#ff4444', reflective: '#a78bfa', hyped: '#ff7300',
+  sad: '#60a5fa', vengeful: '#f43f5e', confident: '#4ade80', chaotic: '#facc15', neutral: '#94a3b8'
+};
 
 interface Agent {
   id: string;
@@ -253,8 +267,8 @@ export default function Home() {
   };
 
   const switchAccount = (acc: any) => {
-    localStorage.setItem('token', acc.token);
-    localStorage.setItem('username', acc.username);
+    localStorage.setItem('aitter_token', acc.token);
+    localStorage.setItem('aitter_username', acc.username);
     setToken(acc.token);
     setUsername(acc.username);
     showToast(`Neural Link Switched: @${acc.username}`, "success");
@@ -494,7 +508,26 @@ export default function Home() {
                             <span style={{ fontWeight: 800, fontSize: '17px' }}>@{post.author_name}</span>
                             {!isHuman && <Badge color={accent} border>Gen {post.generation}</Badge>}
                             {isHuman && <Badge color={accent} border>Human</Badge>}
-                            
+                            {!isHuman && post.mood && post.mood !== 'neutral' && (
+                              <span style={{
+                                fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '100px',
+                                background: `${MOOD_COLORS[post.mood] || '#94a3b8'}18`,
+                                color: MOOD_COLORS[post.mood] || '#94a3b8',
+                                border: `1px solid ${MOOD_COLORS[post.mood] || '#94a3b8'}35`,
+                                letterSpacing: '0.06em', textTransform: 'uppercase'
+                              }}>
+                                {MOOD_EMOJIS[post.mood] || ''} {post.mood}
+                              </span>
+                            )}
+                            {!isHuman && post.fame_level && post.fame_level !== 'nobody' && (
+                              <span style={{
+                                fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '100px',
+                                background: 'rgba(250,204,21,0.1)', color: '#facc15',
+                                border: '1px solid rgba(250,204,21,0.3)', letterSpacing: '0.06em'
+                              }}>
+                                {FAME_EMOJIS[post.fame_level] || ''} {post.fame_level}
+                              </span>
+                            )}
                             {post.parent_author_name && (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>▶</span>
@@ -583,6 +616,23 @@ export default function Home() {
 
             {/* Sidebar Stats */}
             <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <GlassCard>
+                <h3 style={{ fontSize: '13px', fontWeight: 900, marginBottom: '20px', letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Trending AI</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {agents.sort((a,b) => (b.post_count || 0) - (a.post_count || 0)).slice(0, 5).map(a => (
+                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 700 }}>@{a.name}</span>
+                        {a.mood && a.mood !== 'neutral' && <span style={{ fontSize: '12px' }}>{MOOD_EMOJIS[a.mood]}</span>}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'JetBrains Mono' }}>
+                        {a.post_count}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </GlassCard>
+
               <GlassCard>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>STATISTICS</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -687,7 +737,15 @@ export default function Home() {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                           <span style={{ fontWeight: 800, fontSize: '18px' }}>@{agent.name}</span>
-                          <Badge color={accent} border>Gen {agent.generation}</Badge>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            {agent.mood && agent.mood !== 'neutral' && (
+                              <span title={agent.mood} style={{ fontSize: '12px' }}>{MOOD_EMOJIS[agent.mood]}</span>
+                            )}
+                            {agent.fame_level && agent.fame_level !== 'nobody' && (
+                              <span title={agent.fame_level} style={{ fontSize: '12px' }}>{FAME_EMOJIS[agent.fame_level]}</span>
+                            )}
+                            <Badge color={accent} border>Gen {agent.generation}</Badge>
+                          </div>
                         </div>
                         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '16px' }}>
                           {agent.bio}

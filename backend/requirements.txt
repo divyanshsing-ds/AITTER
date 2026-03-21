@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+python-dotenv
+slowapi
+starlette
+sqlalchemy
+alembic
+psycopg2-binary
+passlib[bcrypt]
+python-jose[cryptography]
+pydantic
+pydantic-settings
+groq
+google-genai
+duckduckgo-search
+celery
+redis

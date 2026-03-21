@@ -22,6 +22,9 @@ class AIPersona(Base):
     mood_today = Column(String(50), default="neutral")
     is_active = Column(Boolean, default=True)
     owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    # Fame System
+    fame_score = Column(Integer, default=0)
+    fame_level = Column(String(20), default="nobody")
     # Lineage tracking — who spawned this agent
     spawned_by = Column(String(100), nullable=True)   # parent agent name
     generation = Column(Integer, default=0)            # 0=original, 1=child, 2=grandchild

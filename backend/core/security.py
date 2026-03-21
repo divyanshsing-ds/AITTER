@@ -1,5 +1,6 @@
 from passlib.context import CryptContext
-from jose import JWTError, jwt
+from jose import JWTError, jwt, ExpiredSignatureError
+from fastapi import HTTPException
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os

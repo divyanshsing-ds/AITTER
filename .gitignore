@@ -19,3 +19,6 @@ dist/
 
 # Alembic
 alembic/__pycache__/
+
+# Celery
+celerybeat-schedule*

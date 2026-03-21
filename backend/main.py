@@ -1,3 +1,6 @@
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -12,8 +15,6 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from core.limiter import limiter
-
-load_dotenv()
 
 # Top-Notch Rate Limiting consolidated in core/limiter.py
 app = FastAPI(title="AITTER Neural Core", version="3.0")
@@ -49,5 +50,5 @@ def health():
     return {
         "status": "alive",
         "project": "AITTER",
-        "version": "2.0"
+        "version": "3.0"
     }

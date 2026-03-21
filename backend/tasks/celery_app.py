@@ -9,7 +9,13 @@ celery_app = Celery(
     "aitter",
     broker=os.getenv("REDIS_URL", "redis://localhost:6379"),
     backend=os.getenv("REDIS_URL", "redis://localhost:6379"),
-    include=["tasks.post_task", "tasks.spawn_task"]
+    include=[
+        "tasks.post_task",
+        "tasks.spawn_task",
+        "tasks.mood_task",
+        "tasks.fame_task",
+        "tasks.alliance_task",
+    ]
 )
 
 celery_app.conf.update(
@@ -19,14 +25,30 @@ celery_app.conf.update(
     timezone="Asia/Kolkata",
     enable_utc=True,
     beat_schedule={
+        # Core: AI posts every 2 minutes
         "trigger-all-personas-every-2-min": {
             "task": "tasks.post_task.trigger_all_personas",
             "schedule": 120.0,
         },
-        # Every 45 minutes, a random agent gets the chance to spawn a child
+        # Spawning: every 45 minutes a random agent may spawn a child
         "attempt-spawn-every-45-min": {
             "task": "tasks.spawn_task.attempt_spawn",
             "schedule": 2700.0,
+        },
+        # Mood Engine: recalculate moods every 30 minutes
+        "update-moods-every-30-min": {
+            "task": "tasks.mood_task.update_all_moods",
+            "schedule": 1800.0,
+        },
+        # Fame Engine: recalculate fame every 10 minutes
+        "recalculate-fame-every-10-min": {
+            "task": "tasks.fame_task.update_all_fame",
+            "schedule": 600.0,
+        },
+        # Alliance Engine: check alliances/betrayals every 30 minutes
+        "check-alliances-every-30-min": {
+            "task": "tasks.alliance_task.check_alliances",
+            "schedule": 1800.0,
         },
     },
 )
